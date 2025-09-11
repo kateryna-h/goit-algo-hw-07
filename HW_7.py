@@ -17,7 +17,7 @@ class Name(Field):
 class Phone(Field):
     def __init__(self, value):
         if not self.phone_validation(value):
-            raise ValueError
+            raise ValueError("Invalid phone number")
         super().__init__(value)
 
     def phone_validation(self, value):
@@ -26,10 +26,10 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
-            datetime.strptime(value, "%d.%m.%Y")
+            datetime.strptime(value, "%d.%m.%Y")  # перевірка формату
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
-        super().__init__(value)
+        super().__init__(value)   # зберігаємо як рядок
 
 class Record:
     def __init__(self, name):
@@ -83,7 +83,9 @@ class AddressBook(UserDict):
 
         for record in self.data.values():
             if record.birthday:
-                birthday_this_year = record.birthday.value.replace(year=today.year)
+                # Перетворюємо рядок у datetime.date
+                birthday_date = datetime.strptime(record.birthday.value, "%d.%m.%Y").date()
+                birthday_this_year = birthday_date.replace(year=today.year)
 
                 if birthday_this_year < today:
                     birthday_this_year = birthday_this_year.replace(year=today.year + 1)
@@ -94,11 +96,10 @@ class AddressBook(UserDict):
 
                     if congratulation_date.weekday() == 5:  # субота
                         congratulation_date += timedelta(days=2)
-
                     elif congratulation_date.weekday() == 6:  # неділя
                         congratulation_date += timedelta(days=1)
 
-                    upcoming_birthdays.append({   # створення словничка
+                    upcoming_birthdays.append({
                         "name": record.name.value,
                         "birthday": congratulation_date.strftime("%d.%m.%Y")
                     })
@@ -129,16 +130,16 @@ def parse_input(user_input):
 
 @input_error
 def add_contact(args, book: AddressBook):
-        name, phone, *_ = args
-        record = book.find(name)
-        message = "Contact updated."
-        if record is None:
-            record = Record(name)
-            book.add_record(record)
-            message = "Contact added."
-        if phone:
-            record.add_phone(phone)
-        return message
+    name, phone, *_ = args
+    record = book.find(name)
+    message = "Contact updated."
+    if record is None:
+        record = Record(name)
+        book.add_record(record)
+        message = "Contact added."
+    if phone:
+        record.add_phone(phone)
+    return message
 
 @input_error
 def change_contact(args, book: AddressBook):
@@ -171,7 +172,7 @@ def show_birthday(args, book):
     name = args[0]
     record = book.find(name)
     if record and record.birthday:
-        return record.birthday.value.strftime("%d.%m.%Y")
+        return record.birthday.value  # бо зберігаємо як рядок
     return "No birthday found"
 
 @input_error
